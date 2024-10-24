@@ -1,13 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Put } from '@nestjs/common';
 import { PostsService } from './posts.service';
-
-interface IPost {
-  author: string;
-  title: string;
-  content: string;
-  likeCount: number;
-  commentCount: number;
-}
 
 /**
  * @Controller
@@ -19,19 +11,44 @@ interface IPost {
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
-  /**
-   * 메소드 데코레이터에 첫번째 파라미터에
-   * 원하는 패스를 입력해주면 이 패스에 맞게
-   * 엔드포인트를 맵핑할 수 있다.
-   */
+  //* GET /posts => 모든 post를 가져온다.
   @Get()
-  getPost(): IPost {
-    return {
-      author: 'newjeans_official',
-      title: '뉴진스님 민지',
-      content: '디제잉하는 뉴진 스님',
-      likeCount: 1000000,
-      commentCount: 999999
-    };
+  getPosts() {
+    return this.postsService.getAllPosts();
+  }
+
+  //* GET /posts/:id => id에 해당하는 post를 가져온다.
+  @Get(':id') //? : 으로 패스파라미터 선언
+  //* @Param으로 가져올 파라미터의 이름을 지정해야 함.
+  getPost(@Param('id') id: string) { //? 패스파라미터는 별도의 작업이 없으면 무조건 스트링으로 들어옴.
+    return this.postsService.getPostById(+id)
+  }
+
+  //* POST /posts => post를 생성한다.
+  @Post()
+  postPost(
+    @Body('author') author: string,
+    @Body('title') title: string,
+    @Body('content') content: string,
+  ) {
+    return this.postsService.createPost(author, title, content);
+  }
+
+  //* PATCH /posts/:id => id에 해당하는 post를 변경한다.
+  @Patch(':id')
+  patchPost(
+    @Param('id') id: string,
+    //? 수정을 요청한 값만 변경하도록 옵셔널 처리
+    @Body('author') author?: string,
+    @Body('title') title?: string,
+    @Body('content') content?: string,
+  ) {
+    return this.postsService.updatePost(+id, author, title, content);
+  }
+
+  //* DELETE /posts/:id => id에 해당하는 post를 삭제한다.
+  @Delete(':id')
+  deletePost(@Param('id') id: string) {
+    return this.postsService.deletePost(+id);
   }
 }
