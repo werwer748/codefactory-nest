@@ -38,6 +38,12 @@ let posts: PostModel[] = [
   },
 ];
 
+/**
+ * @Injectable?
+ * => 직역해보면 주입할 수 있다??
+ * @Module의 providers에 원하는 클래스를 등록해 놓으면 DI용도로 클래스를 사용할 수 있는데
+ * 그러기 위해서는 이 데코레이터를 달아줘야지만 프로바이더로 사용할 수 있다.
+ */
 @Injectable()
 export class PostsService {
   getAllPosts() {

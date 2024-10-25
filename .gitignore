@@ -58,3 +58,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# 컨테이너 볼륨연결 폴더 추가
+*/postgres-data/
