@@ -4,12 +4,12 @@ import { AppService } from './app.service';
 import { PostsModule } from './posts/posts.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostsModel } from './posts/entities/posts.entity';
+import { UsersModule } from './users/users.module';
+import { UsersModel } from './users/entities/users.entity';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
   imports: [
-    PostsModule,
-
     /**
      * typeorm module을 추가
      *
@@ -31,9 +31,12 @@ import { PostsModel } from './posts/entities/posts.entity';
       entities: [
         //* 생성한 모델 클래스를 등록
         PostsModel,
+        UsersModel
       ],
-      synchronize: true
-    })
+      synchronize: true,
+    }),
+    PostsModule,
+    UsersModule
   ],
   controllers: [AppController],
   providers: [AppService],

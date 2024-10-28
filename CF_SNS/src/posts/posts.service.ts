@@ -30,7 +30,9 @@ export class PostsService {
    */
   async getAllPosts() {
     //* find안에 조건을 걸어서 추린 데이터를 가져올 수 있음
-    return this.postsRepository.find();
+    return this.postsRepository.find({
+      relations: ['author'],
+    });
   }
 
   async getPostById(postId: number) {
@@ -39,7 +41,8 @@ export class PostsService {
     const post = await this.postsRepository.findOne({
       where: {
         id: postId
-      }
+      },
+      relations: ['author'],
     });
 
     if (!post) {
@@ -49,7 +52,7 @@ export class PostsService {
     return post;
   }
 
-  async createPost(author: string, title: string, content: string) {
+  async createPost(authorId: number, title: string, content: string) {
     /**
      * 1) create -> 저장할 객체를 생성
      * => 사용시 자동완성을 제공받을 수 있기 때문에 편하다.
@@ -62,7 +65,11 @@ export class PostsService {
       //* PostsModel 기반의 레포지토리 - PostsModel의 프로퍼티만 입력이 가능하다.
     const post = this.postsRepository.create({
         //? id: DB에서 생성
-        author,
+
+        //? 관계가 생기면서 UsersModel이 들어가게 되는데 user의 id만 넣어줘도 관계 설정에는 문제가 없다.
+        author: {
+          id: authorId,
+        },
         title,
         content,
         likeCount: 0,
@@ -74,7 +81,7 @@ export class PostsService {
     return newPost;
   }
 
-  async updatePost(postId: number, author: string, title: string, content: string) {
+  async updatePost(postId: number, title: string, content: string) {
     /**
      * save를 통해 변경된 데이터를 저장할 수 있다.
      *
@@ -93,9 +100,6 @@ export class PostsService {
       throw new NotFoundException();
     }
 
-    if (author) {
-      post.author = author;
-    }
     if (title) {
       post.title = title;
     }

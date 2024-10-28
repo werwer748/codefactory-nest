@@ -27,11 +27,11 @@ export class PostsController {
   //* POST /posts => post를 생성한다.
   @Post()
   postPost(
-    @Body('author') author: string,
+    @Body('authorId') authorId: number,
     @Body('title') title: string,
     @Body('content') content: string,
   ) {
-    return this.postsService.createPost(author, title, content);
+    return this.postsService.createPost(authorId, title, content);
   }
 
   //* PATCH /posts/:id => id에 해당하는 post를 변경한다.
@@ -39,11 +39,10 @@ export class PostsController {
   patchPost(
     @Param('id') id: string,
     //? 수정을 요청한 값만 변경하도록 옵셔널 처리
-    @Body('author') author?: string,
     @Body('title') title?: string,
     @Body('content') content?: string,
   ) {
-    return this.postsService.updatePost(+id, author, title, content);
+    return this.postsService.updatePost(+id, title, content);
   }
 
   //* DELETE /posts/:id => id에 해당하는 post를 삭제한다.
