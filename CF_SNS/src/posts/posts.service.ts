@@ -1,42 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-
-//* export 해줌으로써 이 클래스를 사용하는쪽에서도 타입을 인식할 수 있음
-export interface PostModel {
-  id: number;
-  author: string;
-  title: string;
-  content: string;
-  likeCount: number;
-  commentCount: number;
-}
-
-// 포스트 더미데이터
-let posts: PostModel[] = [
-  {
-    id: 1,
-    author: 'newjeans_official',
-    title: '뉴진스님 민지',
-    content: '디제잉하는 뉴진 스님',
-    likeCount: 1000000,
-    commentCount: 999999,
-  },
-  {
-    id: 2,
-    author: 'newjeans_official',
-    title: '뉴진스님 해린',
-    content: '노래 연습중~',
-    likeCount: 1000000,
-    commentCount: 999999,
-  },
-  {
-    id: 3,
-    author: 'blackpink_official',
-    title: '블랙핑크 로제',
-    content: '아파트 아파트?',
-    likeCount: 1000000,
-    commentCount: 999999,
-  },
-];
+import { Repository } from 'typeorm';
+import { PostsModel } from './entities/posts.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 /**
  * @Injectable?
@@ -46,42 +11,83 @@ let posts: PostModel[] = [
  */
 @Injectable()
 export class PostsService {
-  getAllPosts() {
-    return posts;
+  /**
+   * Repository?
+   * 사용할 엔티티를 typeorm에서 제공해주는 Repository에 제네릭을 써서 생성자 주입
+   *
+   * @InjectRepository?
+   * => 특수한 형태기 때문에 해당 데코레이터를 선언해 줄 필요가 있다.
+   */
+  constructor(
+    @InjectRepository(PostsModel)
+    private readonly postsRepository: Repository<PostsModel>
+  ) {}
+
+  /**
+   * repository의 모든 함수는 async!
+   * 컨트롤러에서 서비스가 바로 반환되서 꼭 붙여야하는건 아니지만
+   * 추후 로직이 복잡해질 때는 필요해 질 수 있기에 붙여서 작성
+   */
+  async getAllPosts() {
+    //* find안에 조건을 걸어서 추린 데이터를 가져올 수 있음
+    return this.postsRepository.find();
   }
 
-  getPostById(postId: number) {
-    const post = posts.find((post) => post.id === postId);
+  async getPostById(postId: number) {
 
-    //* 데이터를 못찾으면 에러를 반환해주기
+    //* 하나의 데이터를 찾을 때 findOne을 사용
+    const post = await this.postsRepository.findOne({
+      where: {
+        id: postId
+      }
+    });
+
     if (!post) {
-      //? NotFoundException => nest에서 제공해주는 기본 에러 타입
       throw new NotFoundException();
     }
 
     return post;
   }
 
-  createPost(author: string, title: string, content: string) {
-    const post = {
-      id: posts.at(-1).id + 1,
-      author,
-      title,
-      content,
-      likeCount: 0,
-      commentCount: 0,
-    };
+  async createPost(author: string, title: string, content: string) {
+    /**
+     * 1) create -> 저장할 객체를 생성
+     * => 사용시 자동완성을 제공받을 수 있기 때문에 편하다.
+     *
+     * 2) save -> 객체를 저장한다.
+     * => create 메서드에서 생성한 객체로 save 하는 것이 일반적이고
+     *    안전한 방법 (경우에따라 save에 바로 객체를 넣는 것도 가능)
+     */
 
-    posts = [
-      ...posts,
-      post,
-    ];
+      //* PostsModel 기반의 레포지토리 - PostsModel의 프로퍼티만 입력이 가능하다.
+    const post = this.postsRepository.create({
+        //? id: DB에서 생성
+        author,
+        title,
+        content,
+        likeCount: 0,
+        commentCount: 0,
+      });
 
-    return post;
+    const newPost = await this.postsRepository.save(post);
+
+    return newPost;
   }
 
-  updatePost(postId: number, author: string, title: string, content: string) {
-    const post = posts.find((post) => post.id === postId);
+  async updatePost(postId: number, author: string, title: string, content: string) {
+    /**
+     * save를 통해 변경된 데이터를 저장할 수 있다.
+     *
+     * 1) 만약 해당 id의 데이터가 존재하지 않으면 새로 생성함.
+     * 2) 만약 해당 id의 데이터가 존재한다면 값을 업데이트 한다.
+     *
+     * findOne으로 DB에서 가져온 데이터는 id가 존재하기 떄문에 업데이트!
+     */
+    const post = await this.postsRepository.findOne({
+      where: {
+        id: postId,
+      },
+    });
 
     if (!post) {
       throw new NotFoundException();
@@ -97,19 +103,24 @@ export class PostsService {
       post.content = content;
     }
 
-    posts = posts.map(prevPost => prevPost.id === postId ? post : prevPost);
+    //* if문안에서 바뀐값들로 업데이트
+    const newPost = await this.postsRepository.save(post);
 
-    return post;
+    return newPost;
   }
 
-  deletePost(postId: number) {
-    const post = posts.find((post) => post.id === postId);
+  async deletePost(postId: number) {
+    const post = await this.postsRepository.findOne({
+      where: {
+        id: postId,
+      },
+    });
 
     if (!post) {
       throw new NotFoundException();
     }
 
-    posts = posts.filter((post) => post.id !== postId);
+    await this.postsRepository.delete(postId);
 
     return postId;
   }
