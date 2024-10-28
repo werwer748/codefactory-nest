@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PostsModel } from './entities/posts.entity';
 
 /**
  * @Module?
@@ -20,6 +22,13 @@ import { PostsController } from './posts.controller';
  * 정상적으로 등록된 클래스는 이 모듈안의 어떤 곳에서든 사용할 수 있게 된다.
  */
 @Module({
+  //* 사용할 엔티티를 이렇게 import 해와서 써야함.
+  imports: [
+    //* .forFeature에 사용할 엔티티를 리스트로 넣어준다.
+    TypeOrmModule.forFeature([
+      PostsModel
+    ])
+  ],
   controllers: [PostsController],
   providers: [PostsService],
 })
