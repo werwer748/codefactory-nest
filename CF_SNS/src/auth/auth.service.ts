@@ -1,34 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersModel } from '../users/entities/users.entity';
-import { JWT_SECRET } from './const/auth.const';
+import { HASH_ROUNDS, JWT_SECRET } from './const/auth.const';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 
-/**
- * 구현할 기능 목록
- *
- * 1) registerWithEmail(회원가입)
- *    - email, nickname, password를 입력받고 사용자를 생성
- *    - 생성이 완료되면 accessToken과 refreshToken을 반환한다.
- *
- * 2) loginWithEmail(로그인)
- *    - email, password를 입력하면 사용자 검증을 진행한다.
- *    - 검증이 완료되면 accessToken과 refreshToken을 반환한다.
- *
- * 3) loginUser
- *    - 1 과 2 에서 필요한 accessToken과 refreshToken을 반환하는 로직
- *
- * 4) signToken
- *    - 3 에서 필요한 accessToken과 refreshToken을 sign하는 로직
- *
- * 5) authenticateWithEmailAndPassword
- *    - 2 에서 로그인을 진행할 때 필요한 기본적인 검증을 진행
- *      1. 사용자가 존재하는지 확인(email)
- *      2. 비밀번호 검증
- *      3. 모두 통과되면 찾은 사용자 정보 반환
- *      4. 데이터를 기반으로 토큰 생성
- */
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -87,5 +64,90 @@ export class AuthService {
     }
 
     return findUser;
+  }
+
+  async loginWithEmail(user: Pick<UsersModel, 'email' | 'password'>) {
+    const findUser = await this.authenticateWithEmailAndPassword(user);
+
+    return this.loginUser(findUser);
+  }
+
+  async registerWithEmail(user: Pick<UsersModel, 'nickname' |'email' | 'password'>) {
+    //* 비밀번호 해쉬 - salt는 bcrypt.hash하면 자동으로 생성됨.
+    const hash = await bcrypt.hash(
+      user.password, //? 원본 비밀번호
+      HASH_ROUNDS //? 해시 라운드: 라운드를 많이 돌릴수록 시간이 오래걸리고 보안속도가 올라간다. npmjs 참고
+    );
+
+    const newUser = await this.usersService.createUser({
+      ...user,
+      password: hash,
+    });
+
+    return this.loginUser(newUser);
+  }
+
+  //* 토큰 추출 함수 { authorization: 종류 {토큰} }
+  extractTokenFromHeader(header: string, isBearer: boolean) {
+    // Basic {token}, Bearer {token} - 헤더의 authorization 값은 띄어쓰기를 기준으로 나눈다.
+    const splitToken = header.split(' ');
+
+    const prefix = isBearer ? 'Bearer' : 'Basic';
+
+    // 잘못된 값이 넘어오는 경우를 항상 가정해야한다!
+    if (
+      splitToken.length !== 2 // 띄어쓰기가 여러개인 경우
+      || splitToken[0] !== prefix // prefix가 Bearer, Basic 중 그 무엇도 아닌 경우
+    ) {
+      throw new UnauthorizedException('잘못된 토큰입니다!');
+    }
+
+    const token = splitToken[1];
+
+    return token;
+  }
+
+  //* Basic ;lkajsdlkajsdlkds -> email:password -> return { email, password }
+  decodeBasicToken(base64String: string) {
+    const decoded = Buffer.from(base64String, 'base64').toString('utf8');
+
+    const split = decoded.split(':');
+
+    if (split.length !== 2) {
+      throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
+    }
+
+    const email = split[0];
+    const password = split[1];
+
+    return {
+      email,
+      password
+    }
+  }
+
+  //* JWT Token 검증
+  verifyToken(token: string) {
+    //* 토큰안의 payload 반환
+    return this.jwtService.verify(token, {
+      secret: JWT_SECRET,
+    });
+  }
+
+  //* 만료된 토큰 재발급
+  rotateToken(token: string, isRefreshToken: boolean) {
+    const decoded = this.jwtService.verify(token, { secret: JWT_SECRET });
+
+    if (decoded.type !== 'refresh') {
+      throw new UnauthorizedException('토큰 재발급은 Refresh 토큰으로만 가능합니다!');
+    }
+
+    return this.signToken(
+      {
+        id: decoded.sub,
+        email: decoded.email
+      },
+      isRefreshToken
+    );
   }
 }

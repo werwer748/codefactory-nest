@@ -5,14 +5,19 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  postUser(
-    @Body('nickname') nickname: string,
-    @Body('email') email: string,
-    @Body('password') password: string,
-  ) {
-    return this.usersService.createUser(nickname, email, password);
-  }
+  //! 회원가입은 auth를 통해서만
+  // @Post()
+  // postUser(
+  //   @Body('nickname') nickname: string,
+  //   @Body('email') email: string,
+  //   @Body('password') password: string,
+  // ) {
+  //   return this.usersService.createUser({
+  //     nickname,
+  //     email,
+  //     password
+  //   });
+  // }
 
   @Get()
   getUsers() {
