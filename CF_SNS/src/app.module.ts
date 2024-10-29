@@ -7,6 +7,7 @@ import { PostsModel } from './posts/entities/posts.entity';
 import { UsersModule } from './users/users.module';
 import { UsersModel } from './users/entities/users.entity';
 import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
@@ -38,7 +39,8 @@ import { AuthModule } from './auth/auth.module';
     }),
     PostsModule,
     UsersModule,
-    AuthModule
+    AuthModule,
+    CommonModule
   ],
   controllers: [AppController],
   providers: [AppService],
