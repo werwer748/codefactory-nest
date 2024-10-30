@@ -3,6 +3,10 @@ import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostsModel } from './entities/posts.entity';
+import { AuthModule } from '../auth/auth.module';
+import { UsersModel } from '../users/entities/users.entity';
+import { JwtModule } from '@nestjs/jwt';
+import { UsersModule } from '../users/users.module';
 
 /**
  * @Module?
@@ -26,8 +30,10 @@ import { PostsModel } from './entities/posts.entity';
   imports: [
     //* .forFeature에 사용할 엔티티를 리스트로 넣어준다.
     TypeOrmModule.forFeature([
-      PostsModel
-    ])
+      PostsModel,
+    ]),
+    AuthModule,
+    UsersModule
   ],
   controllers: [PostsController],
   providers: [PostsService],

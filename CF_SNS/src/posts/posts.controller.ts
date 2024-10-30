@@ -8,9 +8,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put,
+  Put, UseGuards, Request
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
+import { AccessTokenGuard } from '../auth/guard/bearer-token.guard';
+import { User } from '../users/decorator/user.decorator';
+import { UsersModel } from '../users/entities/users.entity';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 /**
  * @Controller
@@ -38,25 +43,23 @@ export class PostsController {
 
   //* POST /posts => post를 생성한다.
   @Post()
+  @UseGuards(AccessTokenGuard)
   postPost(
-    @Body('authorId') authorId: number,
-    @Body('title') title: string,
-    @Body('content') content: string,
-    //* DefaultValuePipe 확인용 - 실제로직과는 무관
-    // @Body('isPublic', new DefaultValuePipe(true)) isPublic: boolean,
+    @User('id') userId: number,
+    //* body를 통째로 Dto 형태로 받는다.
+    @Body() body: CreatePostDto
   ) {
-    return this.postsService.createPost(authorId, title, content);
+
+    return this.postsService.createPost(userId, body);
   }
 
   //* PATCH /posts/:id => id에 해당하는 post를 변경한다.
   @Patch(':id')
   patchPost(
     @Param('id', ParseIntPipe) id: number,
-    //? 수정을 요청한 값만 변경하도록 옵셔널 처리
-    @Body('title') title?: string,
-    @Body('content') content?: string,
+    @Body() body: UpdatePostDto
   ) {
-    return this.postsService.updatePost(id, title, content);
+    return this.postsService.updatePost(id, body);
   }
 
   //* DELETE /posts/:id => id에 해당하는 post를 삭제한다.

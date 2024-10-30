@@ -11,6 +11,7 @@ import { UsersModule } from '../users/users.module';
     //* UsersModule에서 exports에 등록한 프로바이더들을 모두 쓰기 위해서
     UsersModule,
   ],
+  exports: [AuthService],
   controllers: [AuthController],
   providers: [AuthService],
 })
