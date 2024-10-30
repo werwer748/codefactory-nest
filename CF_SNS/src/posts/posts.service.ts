@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PaginatePostDto } from './dto/paginate-post.dto';
+import { HOST, PROTOCOL } from '../common/const/env.const';
+import { CommonService } from '../common/common.service';
 
 /**
  * @Injectable?
@@ -22,7 +25,8 @@ export class PostsService {
    */
   constructor(
     @InjectRepository(PostsModel)
-    private readonly postsRepository: Repository<PostsModel>
+    private readonly postsRepository: Repository<PostsModel>,
+    private readonly commonService: CommonService,
   ) {}
 
   /**
@@ -35,6 +39,95 @@ export class PostsService {
     return this.postsRepository.find({
       relations: ['author'],
     });
+  }
+
+  async generatePosts(userId: number) {
+    for (let i = 0; i < 100; i++) {
+      await this.createPost(userId, {
+        title: `임의로 생성된 포스트 제목 ${i}`,
+        content: `임의로 생성된 포스트 내용 ${i}`
+      })
+    }
+  }
+
+  async paginatePosts(dto: PaginatePostDto) {
+    // if (dto.page) {
+    //   return this.pagePaginatePosts(dto);
+    // } else {
+    //   return this.cursorPaginatePosts(dto);
+    // }
+    return this.commonService.paginate(
+      dto,
+      this.postsRepository,
+      {
+        relations: ['author'],
+      },
+      'posts'
+    )
+  }
+
+  async pagePaginatePosts(dto: PaginatePostDto) {
+    const [posts, count] = await this.postsRepository.findAndCount({
+      skip: dto.take * (dto.page - 1),
+      take: dto.take,
+      order: {
+        createdAt: dto.order__createdAt,
+      }
+    });
+
+    return {
+      data: posts,
+      total: count,
+    }
+  }
+
+  async cursorPaginatePosts(dto: PaginatePostDto) {
+    // 스트링으로 변수 담아놓고 쓰기
+    const whereIdLessThanKey: keyof PaginatePostDto = 'where__id__less_than';
+    const whereIdMoreThanKey: keyof PaginatePostDto = 'where__id__more_than';
+
+    const where: FindOptionsWhere<PostsModel> = {}
+
+    if (dto.where__id__less_than) {
+      where.id = LessThan(dto.where__id__less_than)
+    }
+    if (dto.where__id__more_than) {
+      where.id = MoreThan(dto.where__id__more_than)
+    }
+
+    const posts = await this.postsRepository.find({
+      where,
+      order: { createdAt: dto.order__createdAt },
+      take: dto.take,
+    });
+
+    const lastItem = posts.length === dto.take ? posts.at(-1) : null;
+
+    const nextUrl = lastItem && new URL(`${PROTOCOL}://${HOST}/posts`);
+
+    if (nextUrl) {
+      for (const key of Object.keys(dto)) {
+        if (dto[key]) {
+          if (key !== whereIdLessThanKey && key !== whereIdMoreThanKey) {
+            nextUrl.searchParams.append(key, dto[key]);
+          }
+        }
+      }
+
+      const key =
+        dto.order__createdAt === 'ASC' ? whereIdMoreThanKey : whereIdLessThanKey
+
+      nextUrl.searchParams.append(key, lastItem.id.toString())
+    }
+
+    return {
+      data: posts,
+      cursor: {
+        after: lastItem?.id ?? null
+      },
+      count: posts.length,
+      next: nextUrl?.toString() ?? null,
+    };
   }
 
   async getPostById(postId: number) {

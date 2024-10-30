@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { UsersModel } from '../users/entities/users.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module';
+import { CommonModule } from '../common/common.module';
 
 /**
  * @Module?
@@ -33,7 +34,8 @@ import { UsersModule } from '../users/users.module';
       PostsModel,
     ]),
     AuthModule,
-    UsersModule
+    UsersModule,
+    CommonModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

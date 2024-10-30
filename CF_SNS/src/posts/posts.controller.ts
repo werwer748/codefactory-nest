@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put, UseGuards, Request
+  Put, UseGuards, Request, Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { AccessTokenGuard } from '../auth/guard/bearer-token.guard';
@@ -16,6 +16,7 @@ import { User } from '../users/decorator/user.decorator';
 import { UsersModel } from '../users/entities/users.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PaginatePostDto } from './dto/paginate-post.dto';
 
 /**
  * @Controller
@@ -27,10 +28,22 @@ import { UpdatePostDto } from './dto/update-post.dto';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
+  //* 게시글 데이터 생성용 API
+  @Post('random')
+  @UseGuards(AccessTokenGuard)
+  async postPostRandom(@User() user: UsersModel) {
+    await this.postsService.generatePosts(user.id);
+
+    return true;
+  }
+
   //* GET /posts => 모든 post를 가져온다.
   @Get()
-  getPosts() {
-    return this.postsService.getAllPosts();
+  getPosts(
+    // 쿼리스트링 가져오기
+    @Query() query: PaginatePostDto
+  ) {
+    return this.postsService.paginatePosts(query)
   }
 
   //* GET /posts/:id => id에 해당하는 post를 가져온다.
