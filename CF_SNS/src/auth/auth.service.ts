@@ -4,6 +4,7 @@ import { UsersModel } from '../users/entities/users.entity';
 import { HASH_ROUNDS, JWT_SECRET } from './const/auth.const';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import { RegisterUserDto } from './dto/register-user.dto';
 
 
 @Injectable()
@@ -72,7 +73,7 @@ export class AuthService {
     return this.loginUser(findUser);
   }
 
-  async registerWithEmail(user: Pick<UsersModel, 'nickname' |'email' | 'password'>) {
+  async registerWithEmail(user: RegisterUserDto) {
     //* 비밀번호 해쉬 - salt는 bcrypt.hash하면 자동으로 생성됨.
     const hash = await bcrypt.hash(
       user.password, //? 원본 비밀번호
@@ -128,10 +129,14 @@ export class AuthService {
 
   //* JWT Token 검증
   verifyToken(token: string) {
-    //* 토큰안의 payload 반환
-    return this.jwtService.verify(token, {
-      secret: JWT_SECRET,
-    });
+    try {
+      //* 토큰안의 payload 반환
+      return this.jwtService.verify(token, {
+        secret: JWT_SECRET,
+      });
+    } catch (e) {
+      throw new UnauthorizedException('토큰이 만료됐거나 잘못된 토큰입니다.')
+    }
   }
 
   //* 만료된 토큰 재발급

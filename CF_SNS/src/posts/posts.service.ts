@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 /**
  * @Injectable?
@@ -52,7 +54,7 @@ export class PostsService {
     return post;
   }
 
-  async createPost(authorId: number, title: string, content: string) {
+  async createPost(authorId: number, postDto: CreatePostDto) {
     /**
      * 1) create -> 저장할 객체를 생성
      * => 사용시 자동완성을 제공받을 수 있기 때문에 편하다.
@@ -70,8 +72,7 @@ export class PostsService {
         author: {
           id: authorId,
         },
-        title,
-        content,
+        ...postDto,
         likeCount: 0,
         commentCount: 0,
       });
@@ -81,7 +82,7 @@ export class PostsService {
     return newPost;
   }
 
-  async updatePost(postId: number, title: string, content: string) {
+  async updatePost(postId: number, { title, content }: UpdatePostDto) {
     /**
      * save를 통해 변경된 데이터를 저장할 수 있다.
      *
