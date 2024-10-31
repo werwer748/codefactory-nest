@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,9 @@ import { PaginatePostDto } from './dto/paginate-post.dto';
 import { CommonService } from '../common/common.service';
 import { ENV_HOST_KEY, ENV_PROTOCOL_KEY } from '../common/const/env-keys.const';
 import { ConfigService } from '@nestjs/config';
+import { join, basename } from 'path';
+import { POST_IMAGE_PATH, TEMP_FOLDER_PATH } from '../common/const/path.const';
+import { promises } from 'fs';
 
 /**
  * @Injectable?
@@ -152,6 +155,35 @@ export class PostsService {
     return post;
   }
 
+  async createPostImage(dto: CreatePostDto) {
+    // dto의 이미지 이름을 기반으로 파일의 경로를 생성
+    const tempFilePath = join(
+      TEMP_FOLDER_PATH,
+      dto.image
+    );
+
+    try {
+      // 파일이 존재하는지 확인 - 없을시 에러
+      await promises.access(tempFilePath);
+    } catch (e) {
+      throw new BadRequestException('존재하지 않는 파일 입니다.');
+    }
+
+    // 파일의 이름만 가져오기
+    const filename = basename(tempFilePath);
+
+    // 새로 이동할 포스트 폴더의 경로 + 이미지 이름
+    const newPath = join(
+      POST_IMAGE_PATH,
+      filename
+    );
+
+    // 파일 옮기기 - rename(기존 경로, 새로운 경로)
+    await promises.rename(tempFilePath, newPath);
+
+    return true;
+  }
+
   async createPost(authorId: number, postDto: CreatePostDto) {
     /**
      * 1) create -> 저장할 객체를 생성
@@ -164,8 +196,6 @@ export class PostsService {
 
       //* PostsModel 기반의 레포지토리 - PostsModel의 프로퍼티만 입력이 가능하다.
     const post = this.postsRepository.create({
-        //? id: DB에서 생성
-
         //? 관계가 생기면서 UsersModel이 들어가게 되는데 user의 id만 넣어줘도 관계 설정에는 문제가 없다.
         author: {
           id: authorId,

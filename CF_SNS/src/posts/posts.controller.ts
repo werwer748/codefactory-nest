@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put, UseGuards, Request, Query,
+  Put, UseGuards, Request, Query, UseInterceptors, UploadedFile,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { AccessTokenGuard } from '../auth/guard/bearer-token.guard';
@@ -17,6 +17,7 @@ import { UsersModel } from '../users/entities/users.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 /**
  * @Controller
@@ -57,13 +58,16 @@ export class PostsController {
   //* POST /posts => post를 생성한다.
   @Post()
   @UseGuards(AccessTokenGuard)
-  postPost(
+  async postPost(
     @User('id') userId: number,
     //* body를 통째로 Dto 형태로 받는다.
-    @Body() body: CreatePostDto
+    @Body() body: CreatePostDto,
   ) {
+    await this.postsService.createPostImage(body);
 
-    return this.postsService.createPost(userId, body);
+    return this.postsService.createPost(
+      userId, body
+    );
   }
 
   //* PATCH /posts/:id => id에 해당하는 post를 변경한다.
