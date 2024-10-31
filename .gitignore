@@ -64,4 +64,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 */postgres-data/
 
 # 접근 가능 파일 폴더
-!/CF_SNS/public/
+!/CF_SNS/public/*
+CF_SNS/public/

@@ -58,18 +58,15 @@ export class PostsController {
   //* POST /posts => post를 생성한다.
   @Post()
   @UseGuards(AccessTokenGuard)
-  // 이미지 받아올 인터셉터 파일인터셉터('이미지올린 프로퍼티명')
-  @UseInterceptors(FileInterceptor('image'))
-  postPost(
+  async postPost(
     @User('id') userId: number,
     //* body를 통째로 Dto 형태로 받는다.
     @Body() body: CreatePostDto,
-    // nest에서 제공하는 파일 가져오는 데코레이터
-    @UploadedFile() file: Express.Multer.File
   ) {
+    await this.postsService.createPostImage(body);
 
     return this.postsService.createPost(
-      userId, body, file?.filename
+      userId, body
     );
   }
 

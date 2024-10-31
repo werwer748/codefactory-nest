@@ -6,6 +6,8 @@ export const PROJECT_ROOT_PATH = process.cwd();
 export const PUBLIC_FOLDER_NAME = 'public';
 // 퍼블릭 폴더 안에서 게시글 이미지를 저장할 폴더 이름
 export const POST_FOLDER_NAME = 'posts';
+// 임시 폴더 이름
+export const TEMP_FOLDER_NAME = 'temp';
 
 // 실제 공개폴더의 절대 경로
 // /{프로젝트 위치}/public
@@ -26,3 +28,11 @@ export const POST_PUBLIC_IMAGE_PATH = join(
   PUBLIC_FOLDER_NAME,
   POST_FOLDER_NAME
 );
+
+// 임시파일 저장할 폴더
+export const TEMP_FOLDER_PATH = join(
+  PUBLIC_FOLDER_PATH,
+  TEMP_FOLDER_NAME
+);
+
+
