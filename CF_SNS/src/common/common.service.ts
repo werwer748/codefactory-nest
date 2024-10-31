@@ -3,10 +3,14 @@ import { BasePaginationDto } from './dto/base-pagination.dto';
 import { FindManyOptions, FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { BaseModel } from './entities/base.entity';
 import { FILTER_MAPPER } from './const/filter-mapper.const';
-import { HOST, PROTOCOL } from './const/env.const';
+import { ENV_HOST_KEY, ENV_JWT_SECRET_KEY, ENV_PROTOCOL_KEY } from './const/env-keys.const';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CommonService {
+  constructor(
+    private readonly configService: ConfigService,
+  ) {}
   // 그냥 T로 받아도 되지만 모든 엔티티가 BaseModel을 상속받고 있기때문에
   // 조금 더 상세한 타입을 잡아주기위해 extends BaseModel을 추가
   paginate<T extends BaseModel>(
@@ -64,7 +68,12 @@ export class CommonService {
 
     const lastItem = results.length === dto.take ? results.at(-1) : null;
 
-    const nextUrl = lastItem && new URL(`${PROTOCOL}://${HOST}/${path}`);
+    const protocol = this.configService.get<string>(ENV_PROTOCOL_KEY);
+    const host = this.configService.get<string>(ENV_HOST_KEY);
+
+    const nextUrl = lastItem && new URL(
+      `${protocol}://${host}/${path}`
+    );
 
     if (nextUrl) {
       for (const key of Object.keys(dto)) {
