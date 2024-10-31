@@ -1,16 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, MoreThan, QueryRunner, Repository } from 'typeorm';
 import { PostsModel } from './entities/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
 import { CommonService } from '../common/common.service';
-import { ENV_HOST_KEY, ENV_PROTOCOL_KEY } from '../common/const/env-keys.const';
 import { ConfigService } from '@nestjs/config';
 import { join, basename } from 'path';
 import { POST_IMAGE_PATH, TEMP_FOLDER_PATH } from '../common/const/path.const';
 import { promises } from 'fs';
+import { CreatePostImageDto } from './image/dto/create-image.dto';
+import { ImageModel } from '../common/entities/image.entity';
+import { DEFAULT_POST_FIND_OPTIONS } from './const/default-post-find-options.const';
 
 /**
  * @Injectable?
@@ -30,6 +32,8 @@ export class PostsService {
   constructor(
     @InjectRepository(PostsModel)
     private readonly postsRepository: Repository<PostsModel>,
+    @InjectRepository(ImageModel)
+    private readonly imageRepository: Repository<ImageModel>,
     private readonly commonService: CommonService,
     private readonly configService: ConfigService,
   ) {}
@@ -42,7 +46,7 @@ export class PostsService {
   async getAllPosts() {
     //* find안에 조건을 걸어서 추린 데이터를 가져올 수 있음
     return this.postsRepository.find({
-      relations: ['author'],
+      ...DEFAULT_POST_FIND_OPTIONS
     });
   }
 
@@ -50,7 +54,8 @@ export class PostsService {
     for (let i = 0; i < 100; i++) {
       await this.createPost(userId, {
         title: `임의로 생성된 포스트 제목 ${i}`,
-        content: `임의로 생성된 포스트 내용 ${i}`
+        content: `임의로 생성된 포스트 내용 ${i}`,
+        images: [],
       })
     }
   }
@@ -65,87 +70,20 @@ export class PostsService {
       dto,
       this.postsRepository,
       {
-        relations: ['author'],
+        ...DEFAULT_POST_FIND_OPTIONS
       },
       'posts'
     )
-  }
-
-  async pagePaginatePosts(dto: PaginatePostDto) {
-    const [posts, count] = await this.postsRepository.findAndCount({
-      skip: dto.take * (dto.page - 1),
-      take: dto.take,
-      order: {
-        createdAt: dto.order__createdAt,
-      }
-    });
-
-    return {
-      data: posts,
-      total: count,
-    }
-  }
-
-  async cursorPaginatePosts(dto: PaginatePostDto) {
-    // 스트링으로 변수 담아놓고 쓰기
-    const whereIdLessThanKey: keyof PaginatePostDto = 'where__id__less_than';
-    const whereIdMoreThanKey: keyof PaginatePostDto = 'where__id__more_than';
-
-    const where: FindOptionsWhere<PostsModel> = {}
-
-    if (dto.where__id__less_than) {
-      where.id = LessThan(dto.where__id__less_than)
-    }
-    if (dto.where__id__more_than) {
-      where.id = MoreThan(dto.where__id__more_than)
-    }
-
-    const posts = await this.postsRepository.find({
-      where,
-      order: { createdAt: dto.order__createdAt },
-      take: dto.take,
-    });
-
-    const lastItem = posts.length === dto.take ? posts.at(-1) : null;
-
-    const protocol = this.configService.get<string>(ENV_PROTOCOL_KEY);
-    const host = this.configService.get<string>(ENV_HOST_KEY);
-
-    const nextUrl = lastItem && new URL(`${protocol}://${host}/posts`);
-
-    if (nextUrl) {
-      for (const key of Object.keys(dto)) {
-        if (dto[key]) {
-          if (key !== whereIdLessThanKey && key !== whereIdMoreThanKey) {
-            nextUrl.searchParams.append(key, dto[key]);
-          }
-        }
-      }
-
-      const key =
-        dto.order__createdAt === 'ASC' ? whereIdMoreThanKey : whereIdLessThanKey
-
-      nextUrl.searchParams.append(key, lastItem.id.toString())
-    }
-
-    return {
-      data: posts,
-      cursor: {
-        after: lastItem?.id ?? null
-      },
-      count: posts.length,
-      next: nextUrl?.toString() ?? null,
-    };
   }
 
   async getPostById(postId: number) {
 
     //* 하나의 데이터를 찾을 때 findOne을 사용
     const post = await this.postsRepository.findOne({
+      ...DEFAULT_POST_FIND_OPTIONS,
       where: {
         id: postId
       },
-      relations: ['author'],
     });
 
     if (!post) {
@@ -155,36 +93,11 @@ export class PostsService {
     return post;
   }
 
-  async createPostImage(dto: CreatePostDto) {
-    // dto의 이미지 이름을 기반으로 파일의 경로를 생성
-    const tempFilePath = join(
-      TEMP_FOLDER_PATH,
-      dto.image
-    );
-
-    try {
-      // 파일이 존재하는지 확인 - 없을시 에러
-      await promises.access(tempFilePath);
-    } catch (e) {
-      throw new BadRequestException('존재하지 않는 파일 입니다.');
-    }
-
-    // 파일의 이름만 가져오기
-    const filename = basename(tempFilePath);
-
-    // 새로 이동할 포스트 폴더의 경로 + 이미지 이름
-    const newPath = join(
-      POST_IMAGE_PATH,
-      filename
-    );
-
-    // 파일 옮기기 - rename(기존 경로, 새로운 경로)
-    await promises.rename(tempFilePath, newPath);
-
-    return true;
+  getRepository(qr?: QueryRunner) {
+    return qr? qr.manager.getRepository<PostsModel>(PostsModel) : this.postsRepository;
   }
 
-  async createPost(authorId: number, postDto: CreatePostDto) {
+  async createPost(authorId: number, postDto: CreatePostDto, qr?: QueryRunner): Promise<PostsModel> {
     /**
      * 1) create -> 저장할 객체를 생성
      * => 사용시 자동완성을 제공받을 수 있기 때문에 편하다.
@@ -194,18 +107,22 @@ export class PostsService {
      *    안전한 방법 (경우에따라 save에 바로 객체를 넣는 것도 가능)
      */
 
+      // 쿼리러너안에서 실행된다면 쿼리러너에서 레포지토리를 가져온다
+    const repository = this.getRepository(qr);
+
       //* PostsModel 기반의 레포지토리 - PostsModel의 프로퍼티만 입력이 가능하다.
-    const post = this.postsRepository.create({
+    const post = repository.create({
         //? 관계가 생기면서 UsersModel이 들어가게 되는데 user의 id만 넣어줘도 관계 설정에는 문제가 없다.
         author: {
           id: authorId,
         },
         ...postDto,
+        images: [],
         likeCount: 0,
         commentCount: 0,
       });
 
-    const newPost = await this.postsRepository.save(post);
+    const newPost = await repository.save(post);
 
     return newPost;
   }
@@ -257,4 +174,72 @@ export class PostsService {
 
     return postId;
   }
+
+  //! 예제를 위해 남겨뒀지만 사용하지 않음
+  // async pagePaginatePosts(dto: PaginatePostDto) {
+  //   const [posts, count] = await this.postsRepository.findAndCount({
+  //     skip: dto.take * (dto.page - 1),
+  //     take: dto.take,
+  //     order: {
+  //       createdAt: dto.order__createdAt,
+  //     }
+  //   });
+  //
+  //   return {
+  //     data: posts,
+  //     total: count,
+  //   }
+  // }
+  //
+  // async cursorPaginatePosts(dto: PaginatePostDto) {
+  //   // 스트링으로 변수 담아놓고 쓰기
+  //   const whereIdLessThanKey: keyof PaginatePostDto = 'where__id__less_than';
+  //   const whereIdMoreThanKey: keyof PaginatePostDto = 'where__id__more_than';
+  //
+  //   const where: FindOptionsWhere<PostsModel> = {}
+  //
+  //   if (dto.where__id__less_than) {
+  //     where.id = LessThan(dto.where__id__less_than)
+  //   }
+  //   if (dto.where__id__more_than) {
+  //     where.id = MoreThan(dto.where__id__more_than)
+  //   }
+  //
+  //   const posts = await this.postsRepository.find({
+  //     where,
+  //     order: { createdAt: dto.order__createdAt },
+  //     take: dto.take,
+  //   });
+  //
+  //   const lastItem = posts.length === dto.take ? posts.at(-1) : null;
+  //
+  //   const protocol = this.configService.get<string>(ENV_PROTOCOL_KEY);
+  //   const host = this.configService.get<string>(ENV_HOST_KEY);
+  //
+  //   const nextUrl = lastItem && new URL(`${protocol}://${host}/posts`);
+  //
+  //   if (nextUrl) {
+  //     for (const key of Object.keys(dto)) {
+  //       if (dto[key]) {
+  //         if (key !== whereIdLessThanKey && key !== whereIdMoreThanKey) {
+  //           nextUrl.searchParams.append(key, dto[key]);
+  //         }
+  //       }
+  //     }
+  //
+  //     const key =
+  //       dto.order__createdAt === 'ASC' ? whereIdMoreThanKey : whereIdLessThanKey
+  //
+  //     nextUrl.searchParams.append(key, lastItem.id.toString())
+  //   }
+  //
+  //   return {
+  //     data: posts,
+  //     cursor: {
+  //       after: lastItem?.id ?? null
+  //     },
+  //     count: posts.length,
+  //     next: nextUrl?.toString() ?? null,
+  //   };
+  // }
 }
