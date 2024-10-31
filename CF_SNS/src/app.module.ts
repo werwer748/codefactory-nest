@@ -9,10 +9,25 @@ import { UsersModel } from './users/entities/users.entity';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import {
+  ENV_DB_DATABASE_KEY,
+  ENV_DB_HOST_KEY,
+  ENV_DB_PASSWORD_KEY,
+  ENV_DB_PORT_KEY,
+  ENV_DB_USERNAME_KEY,
+} from './common/const/env-keys.const';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
   imports: [
+    // 앱모듈에서 인젝트하고있는 상황 -> TypeOrmModule에 적용하기가 어렵다.
+    ConfigModule.forRoot({
+      //? 환경변수 파일 이름 오른쪽 파일 기준으로 중복값은 덮어 씌운다.
+      envFilePath: ['.env.dev', '.env.prod', '.env'],
+      //? 앱에서 전역적으로 사용할 수 있게끔 설정
+      isGlobal: true,
+    }),
     /**
      * typeorm module을 추가
      *
@@ -24,19 +39,37 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
      *
      * 추후 이 연결 정보들은 환경변수로 빼는것이 좋다.
      */
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'postgres',
-      entities: [
-        //* 생성한 모델 클래스를 등록
-        PostsModel,
-        UsersModel
-      ],
-      synchronize: true,
+    // TypeOrmModule.forRoot({
+    //   type: 'postgres',
+    //   host: process.env[ENV_DB_HOST_KEY],
+    //   port: parseInt(process.env[ENV_DB_PORT_KEY]),
+    //   username: process.env[ENV_DB_USERNAME_KEY],
+    //   password: process.env[ENV_DB_PASSWORD_KEY],
+    //   database: process.env[ENV_DB_DATABASE_KEY],
+    //   entities: [
+    //     //* 생성한 모델 클래스를 등록
+    //     PostsModel,
+    //     UsersModel
+    //   ],
+    //   synchronize: true,
+    // }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>(ENV_DB_HOST_KEY),
+        port: configService.get<number>(ENV_DB_PORT_KEY),
+        username: configService.get<string>(ENV_DB_USERNAME_KEY),
+        password: configService.get<string>(ENV_DB_PASSWORD_KEY),
+        database: configService.get<string>(ENV_DB_DATABASE_KEY),
+        entities: [
+          //* 생성한 모델 클래스를 등록
+          PostsModel,
+          UsersModel
+        ],
+        synchronize: true,
+      }),
     }),
     PostsModule,
     UsersModule,
