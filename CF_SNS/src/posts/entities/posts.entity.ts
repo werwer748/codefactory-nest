@@ -1,11 +1,9 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { UsersModel } from '../../users/entities/users.entity';
 import { BaseModel } from '../../common/entities/base.entity';
 import { IsString } from 'class-validator';
 import { stringValidationMessage } from '../../common/validation-message/string-validation.message';
-import { Transform } from 'class-transformer';
-import { join } from 'path';
-import { POST_PUBLIC_IMAGE_PATH } from '../../common/const/path.const';
+import { ImageModel } from '../../common/entities/image.entity';
 
 /**
  * @Entity?
@@ -43,21 +41,13 @@ export class PostsModel extends BaseModel {
   @Column({
     nullable: true
   })
-  /**
-   * @Transform()? class-transformer에서 제공
-   * 함수를 넣어서 사용
-   * 넘겨 받은 인자는 실제 데이터에서 넘어온 프로퍼티의 값
-   */
-  @Transform(
-    ({ value }) =>
-      value &&
-      `/${join(POST_PUBLIC_IMAGE_PATH, value)}`
-  )
-  image?: string;
 
   @Column()
   likeCount: number;
 
   @Column()
   commentCount: number;
+
+  @OneToMany((type) => ImageModel, (image) => image.post)
+  images: ImageModel[];
 }

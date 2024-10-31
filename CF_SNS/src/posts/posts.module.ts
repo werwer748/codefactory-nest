@@ -8,6 +8,8 @@ import { UsersModel } from '../users/entities/users.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '../users/users.module';
 import { CommonModule } from '../common/common.module';
+import { ImageModel } from '../common/entities/image.entity';
+import { PostsImagesService } from './image/images.service';
 
 /**
  * @Module?
@@ -32,12 +34,13 @@ import { CommonModule } from '../common/common.module';
     //* .forFeature에 사용할 엔티티를 리스트로 넣어준다.
     TypeOrmModule.forFeature([
       PostsModel,
+      ImageModel
     ]),
     AuthModule,
     UsersModule,
     CommonModule,
   ],
   controllers: [PostsController],
-  providers: [PostsService],
+  providers: [PostsService, PostsImagesService],
 })
 export class PostsModule {}

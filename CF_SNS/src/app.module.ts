@@ -19,6 +19,7 @@ import {
 } from './common/const/env-keys.const';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
+import { ImageModel } from './common/entities/image.entity';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
@@ -68,7 +69,8 @@ import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
         entities: [
           //* 생성한 모델 클래스를 등록
           PostsModel,
-          UsersModel
+          UsersModel,
+          ImageModel
         ],
         synchronize: true,
       }),

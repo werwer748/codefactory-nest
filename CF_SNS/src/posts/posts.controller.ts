@@ -1,14 +1,15 @@
 import {
   Body,
-  Controller, DefaultValuePipe,
+  Controller,
   Delete,
   Get,
-  NotFoundException,
+  InternalServerErrorException,
   Param,
   ParseIntPipe,
   Patch,
   Post,
-  Put, UseGuards, Request, Query, UseInterceptors, UploadedFile,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { AccessTokenGuard } from '../auth/guard/bearer-token.guard';
@@ -17,7 +18,9 @@ import { UsersModel } from '../users/entities/users.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageModelType } from '../common/entities/image.entity';
+import { DataSource } from 'typeorm';
+import { PostsImagesService } from './image/images.service';
 
 /**
  * @Controller
@@ -27,7 +30,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
  */
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly postImageService: PostsImagesService,
+    // 트랜잭션 사용을 위해 dataSource를 가져온다.
+    private readonly dataSource: DataSource
+  ) {}
 
   //* 게시글 데이터 생성용 API
   @Post('random')
@@ -63,11 +71,41 @@ export class PostsController {
     //* body를 통째로 Dto 형태로 받는다.
     @Body() body: CreatePostDto,
   ) {
-    await this.postsService.createPostImage(body);
+    // 쿼리러너 생성 - 트랜잭션과 관련된 모든 쿼리를 담당
+    const qr = this.dataSource.createQueryRunner();
 
-    return this.postsService.createPost(
-      userId, body
-    );
+    // 쿼리 러너에 연결
+    await qr.connect();
+    // 쿼리 러너에서 트랜잭션 시작 - 이 시점부터 쿼리러너를 사용하면 트랜잭션 안에서 DB 액션을 실행
+    await qr.startTransaction();
+
+    // 로직 실행
+    try {
+      const post = await this.postsService.createPost(
+        userId, body, qr
+      );
+
+      for (let i = 0; i < body.images.length; i++) {
+        await this.postImageService.createPostImage({
+          post,
+          order: i,
+          path: body.images[i],
+          type: ImageModelType.POST_IMAGE,
+        }, qr);
+      }
+
+      // 트랜잭션 저장을 DB에 반영
+      await qr.commitTransaction();
+
+      return this.postsService.getPostById(post.id);
+    } catch (e) {
+      // 어떤 에러든 발생하면 트랜잭션을 종료하고 원래 상태로 되돌린다.
+      await qr.rollbackTransaction();
+      throw new InternalServerErrorException('생성에러');
+    } finally {
+      // 트랜잭션을 종료하고 커넥션풀 반남
+      await qr.release();
+    }
   }
 
   //* PATCH /posts/:id => id에 해당하는 post를 변경한다.
