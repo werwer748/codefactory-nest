@@ -152,7 +152,7 @@ export class PostsService {
     return post;
   }
 
-  async createPost(authorId: number, postDto: CreatePostDto) {
+  async createPost(authorId: number, postDto: CreatePostDto, image?: string) {
     /**
      * 1) create -> 저장할 객체를 생성
      * => 사용시 자동완성을 제공받을 수 있기 때문에 편하다.
@@ -171,6 +171,7 @@ export class PostsService {
           id: authorId,
         },
         ...postDto,
+        image,
         likeCount: 0,
         commentCount: 0,
       });

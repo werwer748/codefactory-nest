@@ -17,6 +17,8 @@ import {
   ENV_DB_PORT_KEY,
   ENV_DB_USERNAME_KEY,
 } from './common/const/env-keys.const';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
@@ -70,6 +72,13 @@ import {
         ],
         synchronize: true,
       }),
+    }),
+    //* 스태틱 파일 서빙 모듈
+    ServeStaticModule.forRoot({
+      // 이렇게만 추가하면 주소/posts/이미지.jpg로만 요청하게 된다.
+      rootPath: PUBLIC_FOLDER_PATH,
+      // prefix를 붙여서 주소/public/posts/이미지.jpg로 요청할 수 있게 한다.
+      serveRoot: '/public',
     }),
     PostsModule,
     UsersModule,
