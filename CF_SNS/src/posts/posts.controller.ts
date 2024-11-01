@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,7 +9,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
+  Query, UseFilters,
   UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
@@ -24,6 +25,7 @@ import { PostsImagesService } from './image/images.service';
 import { LogInterceptor } from '../common/Interceptor/log.interceptor';
 import { TransactionInterceptor } from '../common/Interceptor/transaction.interceptor';
 import { GetQueryRunner } from '../common/decorator/query-runner.decorator';
+import { HttpExceptionFilter } from '../common/exception-filter/http.exception-filter';
 
 /**
  * @Controller
@@ -53,10 +55,13 @@ export class PostsController {
   @Get()
   // 로깅용 인터셉터 적용해보기
   @UseInterceptors(LogInterceptor)
+  // ExceptionFilter 사용하기!
+  // @UseFilters(HttpExceptionFilter)
   getPosts(
     // 쿼리스트링 가져오기
     @Query() query: PaginatePostDto
   ) {
+
     return this.postsService.paginatePosts(query)
   }
 

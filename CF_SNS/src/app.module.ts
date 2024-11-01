@@ -1,4 +1,4 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from './posts/posts.module';
@@ -20,6 +20,7 @@ import {
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
 import { ImageModel } from './common/entities/image.entity';
+import { LogMiddleware } from './common/middleware/log.middleware';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
@@ -96,4 +97,20 @@ import { ImageModel } from './common/entities/image.entity';
     }
   ],
 })
-export class AppModule {}
+
+// 미들웨어를 앱모듈에 적용해서 앱 전역으로 사용
+export class AppModule implements NestModule {
+    // implements NestModule =>  configure
+  configure(consumer: MiddlewareConsumer): any {
+    consumer.apply(
+      // 적용하고 싶은 미들웨어를 넣어준다.
+      LogMiddleware,
+    ).forRoutes( // 적용하고 싶은 라우트를 지정해줘야 한다.
+      // '*' => 전체 적용
+      {
+        path: '*', // 모든 라우트에 적용
+        method: RequestMethod.ALL, // 모든 메소드에 적용
+      }
+    )
+  }
+}
