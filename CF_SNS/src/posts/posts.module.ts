@@ -1,4 +1,4 @@
-import { BadRequestException, Module } from '@nestjs/common';
+import { BadRequestException, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import { UsersModule } from '../users/users.module';
 import { CommonModule } from '../common/common.module';
 import { ImageModel } from '../common/entities/image.entity';
 import { PostsImagesService } from './image/images.service';
+import { LogMiddleware } from '../common/middleware/log.middleware';
 
 /**
  * @Module?
@@ -43,4 +44,20 @@ import { PostsImagesService } from './image/images.service';
   controllers: [PostsController],
   providers: [PostsService, PostsImagesService],
 })
+
 export class PostsModule {}
+// export class PostsModule implements NestModule {
+//   // implements NestModule =>  configure
+//   configure(consumer: MiddlewareConsumer): any {
+//     consumer.apply(
+//       // 적용하고 싶은 미들웨어를 넣어준다.
+//       LogMiddleware,
+//     ).forRoutes( // 적용하고 싶은 라우트를 지정해줘야 한다.
+//       // '*' => 전체 적용
+//       {
+//         path: 'posts*', // 모든 posts라우트에 적용
+//         method: RequestMethod.ALL, // 모든 메소드에 적용
+//       }
+//     )
+//   }
+// }
