@@ -8,15 +8,16 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { RolesEnum } from '../const/roles.const';
-import { PostsModel } from '../../posts/entities/posts.entity';
-import { BaseModel } from '../../common/entities/base.entity';
+import { PostsModel } from '../../posts/entity/posts.entity';
+import { BaseModel } from '../../common/entity/base.entity';
 import { IsEmail, IsString, Length, ValidationArguments } from 'class-validator';
 import { lengthValidationMessage } from '../../common/validation-message/length-validation.message';
 import { stringValidationMessage } from '../../common/validation-message/string-validation.message';
 import { emailValidationMessage } from '../../common/validation-message/email-validation.message';
 import { Exclude, Expose } from 'class-transformer';
-import { ChatsModel } from '../../chats/entities/chats.entity';
+import { ChatsModel } from '../../chats/entity/chats.entity';
 import { MessagesModel } from '../../chats/messages/entities/messages.entity';
+import { CommentsModel } from '../../posts/comments/entity/comments.entity';
 
 @Entity()
 // @Exclude() - 전체 숨김처리
@@ -101,4 +102,7 @@ export class UsersModel extends BaseModel {
 
   @OneToMany(() => MessagesModel, (message) => message.author)
   messages: MessagesModel[];
+
+  @OneToMany(() => CommentsModel, (comment) => comment.author)
+  postComments: CommentsModel[];
 }

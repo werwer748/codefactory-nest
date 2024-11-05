@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { FindOptionsWhere, LessThan, MoreThan, QueryRunner, Repository } from 'typeorm';
-import { PostsModel } from './entities/posts.entity';
+import { PostsModel } from './entity/posts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -11,7 +11,7 @@ import { join, basename } from 'path';
 import { POST_IMAGE_PATH, TEMP_FOLDER_PATH } from '../common/const/path.const';
 import { promises } from 'fs';
 import { CreatePostImageDto } from './image/dto/create-image.dto';
-import { ImageModel } from '../common/entities/image.entity';
+import { ImageModel } from '../common/entity/image.entity';
 import { DEFAULT_POST_FIND_OPTIONS } from './const/default-post-find-options.const';
 
 /**
@@ -174,6 +174,14 @@ export class PostsService {
     await this.postsRepository.delete(postId);
 
     return postId;
+  }
+
+  async checkPostExistsById(id: number) {
+    return this.postsRepository.exists({
+      where: {
+        id
+      }
+    })
   }
 
   //! 예제를 위해 남겨뒀지만 사용하지 않음

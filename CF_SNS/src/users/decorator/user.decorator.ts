@@ -1,6 +1,6 @@
 //* 데코레이터는 대문자로 시작하는것이 관례이다.
 import { createParamDecorator, ExecutionContext, InternalServerErrorException } from '@nestjs/common';
-import { UsersModel } from '../entities/users.entity';
+import { UsersModel } from '../entity/users.entity';
 
 export const User =
   createParamDecorator((data: keyof UsersModel | undefined, context: ExecutionContext) => {

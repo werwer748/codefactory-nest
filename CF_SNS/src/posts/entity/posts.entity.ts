@@ -1,9 +1,10 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import { UsersModel } from '../../users/entities/users.entity';
-import { BaseModel } from '../../common/entities/base.entity';
+import { UsersModel } from '../../users/entity/users.entity';
+import { BaseModel } from '../../common/entity/base.entity';
 import { IsString } from 'class-validator';
 import { stringValidationMessage } from '../../common/validation-message/string-validation.message';
-import { ImageModel } from '../../common/entities/image.entity';
+import { ImageModel } from '../../common/entity/image.entity';
+import { CommentsModel } from '../comments/entity/comments.entity';
 
 /**
  * @Entity?
@@ -42,7 +43,9 @@ export class PostsModel extends BaseModel {
     nullable: true
   })
 
-  @Column()
+  @Column({
+    default: 0
+  })
   likeCount: number;
 
   @Column()
@@ -50,4 +53,7 @@ export class PostsModel extends BaseModel {
 
   @OneToMany((type) => ImageModel, (image) => image.post)
   images: ImageModel[];
+
+  @OneToMany(() => CommentsModel, (comment) => comment.post)
+  comments: CommentsModel[];
 }

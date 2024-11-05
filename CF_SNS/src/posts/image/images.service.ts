@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ImageModel } from '../../common/entities/image.entity';
+import { ImageModel } from '../../common/entity/image.entity';
 import { QueryRunner, Repository } from 'typeorm';
 import { CreatePostImageDto } from './dto/create-image.dto';
 import { basename, join } from 'path';
 import { POST_IMAGE_PATH, TEMP_FOLDER_PATH } from '../../common/const/path.const';
 import { promises } from 'fs';
-import { PostsModel } from '../entities/posts.entity';
+import { PostsModel } from '../entity/posts.entity';
 
 @Injectable()
 export class PostsImagesService {
