@@ -21,6 +21,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
 import { ImageModel } from './common/entities/image.entity';
 import { LogMiddleware } from './common/middleware/log.middleware';
+import { ChatsModule } from './chats/chats.module';
+import { ChatsModel } from './chats/entities/chats.entity';
+import { MessagesModel } from './chats/messages/entities/messages.entity';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
@@ -71,7 +74,9 @@ import { LogMiddleware } from './common/middleware/log.middleware';
           //* 생성한 모델 클래스를 등록
           PostsModel,
           UsersModel,
-          ImageModel
+          ImageModel,
+          ChatsModel,
+          MessagesModel
         ],
         synchronize: true,
       }),
@@ -86,7 +91,8 @@ import { LogMiddleware } from './common/middleware/log.middleware';
     PostsModule,
     UsersModule,
     AuthModule,
-    CommonModule
+    CommonModule,
+    ChatsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -94,7 +100,7 @@ import { LogMiddleware } from './common/middleware/log.middleware';
     {
       provide: APP_INTERCEPTOR,
       useClass: ClassSerializerInterceptor
-    }
+    },
   ],
 })
 

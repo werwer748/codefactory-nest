@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity, JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { RolesEnum } from '../const/roles.const';
 import { PostsModel } from '../../posts/entities/posts.entity';
 import { BaseModel } from '../../common/entities/base.entity';
@@ -7,6 +15,8 @@ import { lengthValidationMessage } from '../../common/validation-message/length-
 import { stringValidationMessage } from '../../common/validation-message/string-validation.message';
 import { emailValidationMessage } from '../../common/validation-message/email-validation.message';
 import { Exclude, Expose } from 'class-transformer';
+import { ChatsModel } from '../../chats/entities/chats.entity';
+import { MessagesModel } from '../../chats/messages/entities/messages.entity';
 
 @Entity()
 // @Exclude() - 전체 숨김처리
@@ -79,5 +89,16 @@ export class UsersModel extends BaseModel {
   role: RolesEnum;
 
   @OneToMany(() => PostsModel, (post) => post.author)
-  posts: PostsModel[]
+  posts: PostsModel[];
+
+  /**
+   * @JoinTable(): @ManyToMany의 경우 두 테이블간에 맵핑을 해주는 중간 테이블이 필요함.
+   * => 총 3개의 테이블이 필요한 것.
+   */
+  @ManyToMany(() => ChatsModel, (chat) => chat.users)
+  @JoinTable()
+  chats: ChatsModel[];
+
+  @OneToMany(() => MessagesModel, (message) => message.author)
+  messages: MessagesModel[];
 }
