@@ -15,7 +15,8 @@ export class ChatsMessagesService {
   ) {}
 
   async createMessage(
-    dto: CreateMessagesDto
+    dto: CreateMessagesDto,
+    authorId: number
   ) {
     // 메시지 데이터 생성 - 연관관계는 id만 넣어줘서 매핑
     const message = await this.messagesRepository.save({
@@ -23,7 +24,7 @@ export class ChatsMessagesService {
         id: dto.chatId,
       },
       author: {
-        id: dto.authorId,
+        id: authorId,
       },
       message: dto.message
     });

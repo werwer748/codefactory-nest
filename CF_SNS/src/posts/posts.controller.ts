@@ -99,8 +99,8 @@ export class PostsController {
         }, qr);
       }
 
-      // return this.postsService.getPostById(post.id, qr);
-      return this.postsService.getPostById(post.id);
+      return this.postsService.getPostById(post.id, qr);
+      // return this.postsService.getPostById(post.id);
   }
 
   //* PATCH /posts/:id => id에 해당하는 post를 변경한다.
