@@ -8,6 +8,8 @@ import { CommonModule } from '../common/common.module';
 import { MessagesModel } from './messages/entities/messages.entity';
 import { ChatsMessagesService } from './messages/messages.service';
 import { MessagesController } from './messages/messages.controller';
+import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { MessagesController } from './messages/messages.controller';
       ChatsModel,
       MessagesModel
     ]),
-    CommonModule
+    CommonModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [ChatsController, MessagesController],
   //* 게이트웨이는 providers에 등록
