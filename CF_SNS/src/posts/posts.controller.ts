@@ -15,11 +15,11 @@ import {
 import { PostsService } from './posts.service';
 import { AccessTokenGuard } from '../auth/guard/bearer-token.guard';
 import { User } from '../users/decorator/user.decorator';
-import { UsersModel } from '../users/entities/users.entity';
+import { UsersModel } from '../users/entity/users.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PaginatePostDto } from './dto/paginate-post.dto';
-import { ImageModelType } from '../common/entities/image.entity';
+import { ImageModelType } from '../common/entity/image.entity';
 import { DataSource, QueryRunner } from 'typeorm';
 import { PostsImagesService } from './image/images.service';
 import { LogInterceptor } from '../common/Interceptor/log.interceptor';

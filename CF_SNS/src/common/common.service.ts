@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { BasePaginationDto } from './dto/base-pagination.dto';
 import { FindManyOptions, FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
-import { BaseModel } from './entities/base.entity';
+import { BaseModel } from './entity/base.entity';
 import { FILTER_MAPPER } from './const/filter-mapper.const';
 import { ENV_HOST_KEY, ENV_JWT_SECRET_KEY, ENV_PROTOCOL_KEY } from './const/env-keys.const';
 import { ConfigService } from '@nestjs/config';
@@ -100,7 +100,7 @@ export class CommonService {
     };
   }
 
-  private composeFindOptions<T extends BaseModel>(
+  public composeFindOptions<T extends BaseModel>(
     dto: BasePaginationDto,
   ): FindManyOptions<T> {
     /**

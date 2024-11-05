@@ -3,9 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from './posts/posts.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostsModel } from './posts/entities/posts.entity';
+import { PostsModel } from './posts/entity/posts.entity';
 import { UsersModule } from './users/users.module';
-import { UsersModel } from './users/entities/users.entity';
+import { UsersModel } from './users/entity/users.entity';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -19,11 +19,13 @@ import {
 } from './common/const/env-keys.const';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { PUBLIC_FOLDER_PATH } from './common/const/path.const';
-import { ImageModel } from './common/entities/image.entity';
+import { ImageModel } from './common/entity/image.entity';
 import { LogMiddleware } from './common/middleware/log.middleware';
 import { ChatsModule } from './chats/chats.module';
-import { ChatsModel } from './chats/entities/chats.entity';
+import { ChatsModel } from './chats/entity/chats.entity';
 import { MessagesModel } from './chats/messages/entities/messages.entity';
+import { CommentsModule } from './posts/comments/comments.module';
+import { CommentsModel } from './posts/comments/entity/comments.entity';
 
 @Module({
   //* 다른 모듈을 불러올 때 사용하는 속성
@@ -40,7 +42,7 @@ import { MessagesModel } from './chats/messages/entities/messages.entity';
      *
      * forRoot로 nest와 typeorm의 연결고리를 만든다.
      * 내부옵션으로 db연결 정보를 입력
-     * entities: 테이블 모델
+     * entity: 테이블 모델
      * synchronize: 여기서 바꾸는 테이블 정보를 DB에 반영할지 정하는 옵션
      * => 개발중엔 true여도 되지만 배포시 무조건 false로 해야함
      *
@@ -53,7 +55,7 @@ import { MessagesModel } from './chats/messages/entities/messages.entity';
     //   username: process.env[ENV_DB_USERNAME_KEY],
     //   password: process.env[ENV_DB_PASSWORD_KEY],
     //   database: process.env[ENV_DB_DATABASE_KEY],
-    //   entities: [
+    //   entity: [
     //     //* 생성한 모델 클래스를 등록
     //     PostsModel,
     //     UsersModel
@@ -76,7 +78,8 @@ import { MessagesModel } from './chats/messages/entities/messages.entity';
           UsersModel,
           ImageModel,
           ChatsModel,
-          MessagesModel
+          MessagesModel,
+          CommentsModel
         ],
         synchronize: true,
       }),
@@ -93,6 +96,7 @@ import { MessagesModel } from './chats/messages/entities/messages.entity';
     AuthModule,
     CommonModule,
     ChatsModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [
